@@ -1,7 +1,7 @@
 # DAX Technical Portfolio
 
-[![Deploy to GitHub Pages](https://github.com/dax-eng/dax-eng.github.io/actions/workflows/deploy.yml/badge.svg)](https://github.com/dax-eng/dax-eng.github.io/actions)
-[![Live URL](https://img.shields.io/badge/Live%20Demo-dax-eng.github.io-38BDF8?style=flat-square&logo=github)](https://dax-eng.github.io)
+[![Deploy to GitHub Pages](https://github.com/dax0056/dax0056.github.io/actions/workflows/deploy.yml/badge.svg)](https://github.com/dax0056/dax0056.github.io/actions)
+[![Live URL](https://img.shields.io/badge/Live%20Demo-dax0056.github.io-38BDF8?style=flat-square&logo=github)](https://dax0056.github.io)
 [![Stack](https://img.shields.io/badge/Stack-React%2019%20%7C%20TypeScript%20%7C%20Vite%20%7C%20Tailwind-38BDF8?style=flat-square)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
@@ -12,7 +12,7 @@
 
 ## 🌐 Live Production Website
 
-- **Production URL**: **[https://dax-eng.github.io](https://dax-eng.github.io)**
+- **Production URL**: **[https://dax0056.github.io](https://dax0056.github.io)**
 - **Hosting**: GitHub Pages (Static Edge CDN with HTTPS & HTTP/2)
 - **Deployment**: Automated CI/CD via GitHub Actions (`.github/workflows/deploy.yml`)
 
@@ -21,9 +21,9 @@
 ## ⚡ Overview
 
 A lightweight, dark-themed, high-performance personal portfolio showcasing real open-source agent engineering projects:
-- **Flagship**: [`nexus-agent`](https://github.com/dax-eng/nexus-agent) — Local-first AI agent reference core.
-- **Code Tooling**: [`micro-coding-agent`](https://github.com/dax-eng/micro-coding-agent) — Deterministic AST code verification.
-- **OS Automation**: [`desktop-action-agent`](https://github.com/dax-eng/desktop-action-agent) — Sandboxed desktop control & SHA-256 audit trails.
+- **Flagship**: [`nexus-agent`](https://github.com/dax0056/nexus-agent) — Local-first AI agent reference core.
+- **Code Tooling**: [`micro-coding-agent`](https://github.com/dax0056/micro-coding-agent) — Deterministic AST code verification.
+- **OS Automation**: [`desktop-action-agent`](https://github.com/dax0056/desktop-action-agent) — Sandboxed desktop control & SHA-256 audit trails.
 
 ---
 
@@ -65,7 +65,7 @@ Every push to the `main` branch triggers the GitHub Actions workflow (`.github/w
 1. Sets up the Node.js 20 environment.
 2. Installs clean dependencies via `npm ci`.
 3. Compiles TypeScript and builds production static bundles with Vite.
-4. Deploys the artifact directly to the GitHub Pages environment at `https://dax-eng.github.io`.
+4. Deploys the artifact directly to the GitHub Pages environment at `https://dax0056.github.io`.
 
 ---
 
