@@ -1,7 +1,7 @@
 import React from 'react';
 import { PROFILE } from '../data/portfolioData';
-import { ArrowDown, ShieldCheck, Cpu, Wrench } from 'lucide-react';
-import { GithubIcon, LinkedinIcon } from './Icons';
+import { ArrowDown, ShieldCheck, Cpu, Wrench, Zap } from 'lucide-react';
+import { GithubIcon } from './Icons';
 
 export const Hero: React.FC = () => {
   return (
@@ -50,16 +50,18 @@ export const Hero: React.FC = () => {
           {PROFILE.vision}
         </p>
 
-        {/* Action Buttons */}
+        {/* 3 Prominent Action Buttons */}
         <div className="flex flex-wrap items-center justify-center gap-3 mb-10 sm:mb-12">
+          {/* CTA 1: Explore Agent Lab */}
           <a
-            href="#projects"
+            href="#agent-lab"
             className="flex items-center gap-2 rounded-lg bg-cyan-500 px-5 py-2.5 text-xs sm:text-sm font-semibold text-obsidian-950 hover:bg-cyan-400 transition-all shadow-lg shadow-cyan-950/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
           >
-            <span>Explore Projects</span>
-            <ArrowDown className="h-4 w-4" />
+            <Zap className="h-4 w-4 fill-obsidian-950" />
+            <span>Explore Agent Lab</span>
           </a>
 
+          {/* CTA 2: View GitHub */}
           <a
             href={PROFILE.github}
             target="_blank"
@@ -67,17 +69,16 @@ export const Hero: React.FC = () => {
             className="flex items-center gap-2 rounded-lg border border-slate-700 bg-obsidian-850 px-5 py-2.5 text-xs sm:text-sm font-medium text-slate-200 hover:border-slate-500 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
           >
             <GithubIcon className="h-4 w-4" />
-            <span>GitHub Profile</span>
+            <span>View GitHub</span>
           </a>
 
+          {/* CTA 3: Explore Projects */}
           <a
-            href={PROFILE.linkedin}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 rounded-lg border border-blue-600/50 bg-blue-950/20 px-5 py-2.5 text-xs sm:text-sm font-medium text-blue-300 hover:border-blue-400 hover:bg-blue-900/30 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+            href="#projects"
+            className="flex items-center gap-2 rounded-lg border border-slate-800 bg-obsidian-900/80 px-5 py-2.5 text-xs sm:text-sm font-medium text-slate-300 hover:border-slate-600 hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
           >
-            <LinkedinIcon className="h-4 w-4" />
-            <span>LinkedIn</span>
+            <span>Explore Projects</span>
+            <ArrowDown className="h-4 w-4" />
           </a>
         </div>
 

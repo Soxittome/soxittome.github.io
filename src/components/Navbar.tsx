@@ -7,6 +7,7 @@ export const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
+    { name: 'Agent Lab', href: '#agent-lab' },
     { name: 'Projects', href: '#projects' },
     { name: 'Architecture', href: '#architecture' },
     { name: 'Principles', href: '#principles' },

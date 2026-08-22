@@ -1,8 +1,9 @@
 import React from 'react';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
-import { ArchitectureFlow } from './components/ArchitectureFlow';
+import { AgentLab } from './components/AgentLab';
 import { Projects } from './components/Projects';
+import { ArchitectureFlow } from './components/ArchitectureFlow';
 import { Principles } from './components/Principles';
 import { TechnicalFocus } from './components/TechnicalFocus';
 import { About } from './components/About';
@@ -14,6 +15,7 @@ export const App: React.FC = () => {
       <Navbar />
       <main className="flex-1">
         <Hero />
+        <AgentLab />
         <Projects />
         <ArchitectureFlow />
         <Principles />
