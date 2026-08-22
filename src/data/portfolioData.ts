@@ -23,7 +23,7 @@ export const PROFILE = {
   title: "AI & Agent Engineer",
   tagline: "Building local-first AI systems, developer tools, and safe computer automation.",
   vision: "“I build agents that do more than generate text — they plan, act, verify, and improve.”",
-  github: "https://github.com/dax0056",
+  github: "https://github.com/dax-eng",
   linkedin: "https://www.linkedin.com/in/mohamed-musa-marouf-ahmed-7030561b8/",
   status: "Active Engineering",
   series: "DAX Agent Engineering Series",
@@ -39,7 +39,7 @@ export const PROJECTS: Project[] = [
     summary: "Dispatches goals across local LLM backends (Ollama, vLLM, Mock), coordinates milestones, and enforces strict workspace root containment.",
     techStack: ["Python 3.9+", "Ollama / vLLM", "Task Planner", "Sandboxed Tools"],
     testCount: "7 / 7 Tests Passing",
-    githubUrl: "https://github.com/dax0056/nexus-agent",
+    githubUrl: "https://github.com/dax-eng/nexus-agent",
     highlights: [
       "Dynamic routing across local models and offline mock engines",
       "Strict workspace isolation with parent directory traversal defense",
@@ -55,7 +55,7 @@ export const PROJECTS: Project[] = [
     summary: "Guarantees safe code changes using pre-flight unified diff dry-runs, human approval gating, atomic chunk replacement, and Python AST validation.",
     techStack: ["Python", "AST Verifier", "Unified Diff", "Approval Gate"],
     testCount: "12 / 12 Tests Passing",
-    githubUrl: "https://github.com/dax0056/micro-coding-agent",
+    githubUrl: "https://github.com/dax-eng/micro-coding-agent",
     highlights: [
       "In-memory unified diff preview before touching disk",
       "Python Abstract Syntax Tree (ast) validation catches syntax errors pre-completion",
@@ -71,7 +71,7 @@ export const PROJECTS: Project[] = [
     summary: "Guards computer-use actions with process allowlists, destructive command filters, bounded coordinates, and immutable cryptographic audit logs.",
     techStack: ["Python", "Process Sandbox", "Window Manager", "SHA-256 Audit"],
     testCount: "10 / 10 Tests Passing",
-    githubUrl: "https://github.com/dax0056/desktop-action-agent",
+    githubUrl: "https://github.com/dax-eng/desktop-action-agent",
     highlights: [
       "Application allowlisting blocks unauthorized binary execution",
       "Destructive command pattern filter intercepts dangerous shell operations",
