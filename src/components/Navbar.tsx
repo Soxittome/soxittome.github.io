@@ -43,13 +43,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigateLab }) => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6 text-xs font-mono text-slate-300" aria-label="Main Navigation">
-          {/* Direct Agent Lab Link */}
+          {/* Direct DAX Agent Link */}
           <button
             onClick={() => onNavigateLab ? onNavigateLab() : (window.location.href = '/lab')}
-            className="flex items-center gap-1 text-cyan-400 font-bold hover:text-cyan-300 transition-colors py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 rounded"
+            className="flex items-center gap-1.5 text-cyan-400 font-bold hover:text-cyan-300 transition-colors py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 rounded"
           >
             <Zap className="h-3.5 w-3.5 fill-cyan-400" />
-            <span>Agent Lab v2</span>
+            <span>DAX Agent</span>
           </button>
 
           {navLinks.map((link) => (
@@ -113,7 +113,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigateLab }) => {
             className="w-full text-left py-2 px-3 rounded-md text-sm font-mono text-cyan-400 font-bold bg-cyan-950/40 border border-cyan-500/30 flex items-center gap-2"
           >
             <Zap className="h-4 w-4" />
-            <span>Agent Lab v2 (Dedicated /lab)</span>
+            <span>DAX Agent (Dedicated Experience)</span>
           </button>
 
           {navLinks.map((link) => (

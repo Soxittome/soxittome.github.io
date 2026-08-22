@@ -22,7 +22,7 @@ export const App: React.FC = () => {
 
     if (pathname === '/lab' || pathname.endsWith('/lab') || window.location.hash.startsWith('#/lab')) {
       setCurrentRoute('lab');
-      document.title = 'DAX Agent Lab — AI & Agent Engineer';
+      document.title = 'DAX Agent — AI & Agent Engineer';
     } else {
       setCurrentRoute('home');
       document.title = 'DAX — AI & Agent Engineer';

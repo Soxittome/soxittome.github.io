@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { LAB_SCENARIOS } from '../data/labData';
-import type { LabScenario, LabStage } from '../data/labData';
+import { LAB_SCENARIOS, AVAILABLE_TOOLS } from '../data/labData';
+import type { LabScenario, LabStage, AgentToolInfo } from '../data/labData';
 import { 
   Play, 
   RotateCcw, 
@@ -20,7 +20,11 @@ import {
   Lock,
   Share2,
   ArrowLeft,
-  Activity
+  Database,
+  Wrench,
+  Sparkles,
+  Sliders,
+  Send
 } from 'lucide-react';
 
 interface AgentLabStandaloneProps {
@@ -30,23 +34,30 @@ interface AgentLabStandaloneProps {
 
 export const AgentLabStandalone: React.FC<AgentLabStandaloneProps> = ({ onNavigateHome, initialScenarioId }) => {
   const [selectedScenarioId, setSelectedScenarioId] = useState<string>(initialScenarioId || 'analyze-code');
+  const [customGoalPrompt, setCustomGoalPrompt] = useState<string>('');
   const [currentStageIndex, setCurrentStageIndex] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [devMode, setDevMode] = useState<boolean>(false);
+  const [selectedToolModal, setSelectedToolModal] = useState<AgentToolInfo | null>(null);
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
   const [copiedSnippet, setCopiedSnippet] = useState<boolean>(false);
-
-  // Sync with initial scenario or URL
-  useEffect(() => {
-    if (initialScenarioId && LAB_SCENARIOS.some(s => s.id === initialScenarioId)) {
-      setSelectedScenarioId(initialScenarioId);
-      setCurrentStageIndex(0);
-    }
-  }, [initialScenarioId]);
 
   const currentScenario: LabScenario = LAB_SCENARIOS.find(s => s.id === selectedScenarioId) || LAB_SCENARIOS[0];
   const currentStage: LabStage = currentScenario.stages[currentStageIndex];
 
-  // Auto-play effect
+  // Initialize prompt on scenario change
+  useEffect(() => {
+    if (initialScenarioId && LAB_SCENARIOS.some(s => s.id === initialScenarioId)) {
+      setSelectedScenarioId(initialScenarioId);
+      const target = LAB_SCENARIOS.find(s => s.id === initialScenarioId);
+      if (target) setCustomGoalPrompt(target.defaultPrompt);
+      setCurrentStageIndex(0);
+    } else {
+      setCustomGoalPrompt(currentScenario.defaultPrompt);
+    }
+  }, [initialScenarioId]);
+
+  // Auto-play simulation progression
   useEffect(() => {
     let timer: ReturnType<typeof setInterval> | undefined;
     if (isPlaying) {
@@ -59,7 +70,7 @@ export const AgentLabStandalone: React.FC<AgentLabStandaloneProps> = ({ onNaviga
             return prev;
           }
         });
-      }, 1600);
+      }, 1500);
     }
     return () => {
       if (timer) clearInterval(timer);
@@ -68,12 +79,18 @@ export const AgentLabStandalone: React.FC<AgentLabStandaloneProps> = ({ onNaviga
 
   const handleScenarioChange = (id: string) => {
     setSelectedScenarioId(id);
+    const sc = LAB_SCENARIOS.find(s => s.id === id);
+    if (sc) setCustomGoalPrompt(sc.defaultPrompt);
     setCurrentStageIndex(0);
     setIsPlaying(false);
-    // Update URL query parameter without full page reload
     if (window.history && window.history.pushState) {
       window.history.pushState(null, '', `/lab?scenario=${id}`);
     }
+  };
+
+  const handleRunAgent = () => {
+    setCurrentStageIndex(0);
+    setIsPlaying(true);
   };
 
   const handleNext = () => {
@@ -123,6 +140,7 @@ export const AgentLabStandalone: React.FC<AgentLabStandaloneProps> = ({ onNaviga
       case 'GitPullRequest': return <GitPullRequest className="h-4 w-4" />;
       case 'Layers': return <Layers className="h-4 w-4" />;
       case 'ShieldCheck': return <ShieldCheck className="h-4 w-4" />;
+      case 'Terminal': return <Terminal className="h-4 w-4" />;
       default: return <Cpu className="h-4 w-4" />;
     }
   };
@@ -133,14 +151,16 @@ export const AgentLabStandalone: React.FC<AgentLabStandaloneProps> = ({ onNaviga
     .flatMap(st => st.consoleLogs);
 
   const progressPercent = ((currentStageIndex + 1) / currentScenario.stages.length) * 100;
+  const isFinished = currentStageIndex === currentScenario.stages.length - 1;
 
   return (
-    <div className="min-h-screen bg-obsidian-950 text-slate-100 flex flex-col selection:bg-cyan-500/20 selection:text-cyan-300">
+    <div className="min-h-screen bg-obsidian-950 text-slate-100 flex flex-col selection:bg-cyan-500/20 selection:text-cyan-300 font-sans">
       
       {/* Top Standalone Header Bar */}
-      <nav className="sticky top-0 z-50 w-full border-b border-slate-800/80 bg-obsidian-950/90 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-50 w-full border-b border-slate-800/80 bg-obsidian-950/90 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           
+          {/* Left: Home Navigation */}
           <div className="flex items-center gap-3">
             <button
               onClick={onNavigateHome}
@@ -152,24 +172,43 @@ export const AgentLabStandalone: React.FC<AgentLabStandaloneProps> = ({ onNaviga
 
             <div className="hidden sm:flex items-center gap-2">
               <span className="text-slate-700">/</span>
-              <span className="text-xs font-mono text-cyan-400 font-semibold">DAX Agent Lab v2</span>
+              <span className="text-xs font-mono text-cyan-400 font-bold tracking-wide">DAX Agent</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Right: Controls & Share */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            
+            {/* Developer Mode Toggle */}
+            <button
+              onClick={() => setDevMode(!devMode)}
+              className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-mono transition-all ${
+                devMode 
+                  ? 'border-emerald-500/60 bg-emerald-950/40 text-emerald-300' 
+                  : 'border-slate-800 bg-obsidian-900 text-slate-400 hover:text-slate-200'
+              }`}
+              title="Toggle Developer State View"
+            >
+              <Sliders className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Dev Mode</span>
+              <span className={`h-1.5 w-1.5 rounded-full ${devMode ? 'bg-emerald-400' : 'bg-slate-600'}`} />
+            </button>
+
+            {/* Share Scenario */}
             <button
               onClick={copyShareLink}
               className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-500/40 bg-cyan-950/30 px-3 py-1.5 text-xs font-mono font-medium text-cyan-300 hover:border-cyan-400 hover:bg-cyan-900/40 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
             >
               {copiedLink ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Share2 className="h-3.5 w-3.5" />}
-              <span>{copiedLink ? 'Link Copied!' : 'Share Scenario'}</span>
+              <span className="hidden sm:inline">{copiedLink ? 'Link Copied' : 'Share Scenario'}</span>
             </button>
 
+            {/* GitHub Profile */}
             <a
               href="https://github.com/dax0056"
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-obsidian-850 px-3 py-1.5 text-xs font-medium text-slate-200 hover:border-slate-500 hover:text-white transition-all"
+              className="hidden md:inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-obsidian-850 px-3 py-1.5 text-xs font-medium text-slate-200 hover:border-slate-500 hover:text-white transition-all"
             >
               <span>GitHub</span>
               <ExternalLink className="h-3 w-3 opacity-60" />
@@ -177,70 +216,91 @@ export const AgentLabStandalone: React.FC<AgentLabStandaloneProps> = ({ onNaviga
           </div>
 
         </div>
-      </nav>
+      </header>
 
       {/* Main Container */}
-      <main className="flex-1 py-10 sm:py-16">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+      <main className="flex-1 py-8 sm:py-12">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           
-          {/* Header Title Section */}
-          <div className="text-center max-w-3xl mx-auto mb-10">
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-950/40 px-3.5 py-1 text-xs font-mono text-cyan-300 mb-3 shadow-sm">
-              <Zap className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
-              <span>CLIENT-SIDE SIMULATION · SAFE DEMO</span>
+          {/* Agent Header & Title */}
+          <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
+            <div className="flex flex-wrap items-center justify-center gap-2 mb-3">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-950/40 px-3 py-0.5 text-xs font-mono text-cyan-300 shadow-sm">
+                <Zap className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
+                <span>SIMULATION MODE</span>
+              </div>
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-obsidian-900 px-3 py-0.5 text-xs font-mono text-slate-400">
+                <Lock className="h-3 w-3 text-emerald-400" />
+                <span>SAFE CLIENT-SIDE DEMO</span>
+              </div>
             </div>
             
-            <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight mb-3">
-              DAX Agent Lab
+            <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight mb-2">
+              DAX Agent
             </h1>
             
-            <p className="text-base sm:text-lg text-slate-300 mb-3">
-              See how an AI agent plans, acts, and verifies.
+            <p className="text-sm sm:text-base md:text-lg text-slate-300 leading-relaxed">
+              A local-first AI agent experience for planning, tools, execution, and verification.
             </p>
-            
-            <div className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-mono text-slate-400 bg-obsidian-900 border border-slate-800 rounded-lg px-3 py-1">
-              <Lock className="h-3 w-3 text-emerald-400" />
-              <span>Direct Link Active: <code className="text-cyan-400 font-bold">/lab?scenario={selectedScenarioId}</code></span>
-            </div>
           </div>
 
-          {/* Scenario Selector Tabs */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-8">
-            {LAB_SCENARIOS.map(sc => {
-              const isSelected = sc.id === selectedScenarioId;
-              return (
+          {/* Goal Input & Prompt Bar */}
+          <div className="rounded-2xl border border-slate-800 bg-obsidian-900/90 shadow-2xl p-4 sm:p-5 mb-8 backdrop-blur-sm">
+            <div className="flex items-center justify-between gap-2 mb-2.5">
+              <label htmlFor="goal-input" className="text-xs font-mono font-bold text-cyan-400 flex items-center gap-1.5 uppercase tracking-wider">
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>Agent Goal Input</span>
+              </label>
+              <span className="text-[11px] font-mono text-slate-500 hidden sm:inline">
+                Pure client-side simulation • Zero API keys
+              </span>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <input
+                  id="goal-input"
+                  type="text"
+                  value={customGoalPrompt}
+                  onChange={(e) => setCustomGoalPrompt(e.target.value)}
+                  placeholder="Enter a task for DAX Agent..."
+                  className="w-full rounded-xl border border-slate-700 bg-obsidian-950 px-4 py-3 text-xs sm:text-sm font-mono text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 transition-all"
+                />
+              </div>
+
+              <button
+                onClick={handleRunAgent}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 px-6 py-3 text-xs sm:text-sm font-bold text-obsidian-950 transition-all shadow-lg shadow-cyan-950/50 hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 shrink-0"
+              >
+                <Send className="h-4 w-4 fill-obsidian-950" />
+                <span>{isPlaying ? 'Running...' : 'Run Agent'}</span>
+              </button>
+            </div>
+
+            {/* Template Selector Chips */}
+            <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center gap-2 overflow-x-auto scrollbar-none">
+              <span className="text-[11px] font-mono text-slate-500 shrink-0">Templates:</span>
+              {LAB_SCENARIOS.map(sc => (
                 <button
                   key={sc.id}
                   onClick={() => handleScenarioChange(sc.id)}
-                  className={`flex flex-col items-start p-3.5 sm:p-4 rounded-xl border text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${
-                    isSelected 
-                      ? 'bg-obsidian-850 border-cyan-500/60 shadow-lg shadow-cyan-950/30 ring-1 ring-cyan-500/40' 
-                      : 'bg-obsidian-900/60 border-slate-800/80 hover:border-slate-700 hover:bg-obsidian-850/60 text-slate-400'
+                  className={`text-xs font-mono px-2.5 py-1 rounded-lg border whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                    sc.id === selectedScenarioId
+                      ? 'border-cyan-500/60 bg-cyan-950/50 text-cyan-300 font-semibold'
+                      : 'border-slate-800 bg-obsidian-950 text-slate-400 hover:border-slate-700 hover:text-slate-200'
                   }`}
                 >
-                  <div className="flex items-center gap-2 mb-1.5 w-full">
-                    <div className={`p-1.5 rounded-md ${isSelected ? 'bg-cyan-500/20 text-cyan-300' : 'bg-slate-800 text-slate-400'}`}>
-                      {getScenarioIcon(sc.icon)}
-                    </div>
-                    <span className={`text-xs font-mono uppercase tracking-wider font-semibold ${isSelected ? 'text-cyan-400' : 'text-slate-500'}`}>
-                      {sc.category}
-                    </span>
-                  </div>
-                  <div className={`font-semibold text-sm sm:text-base ${isSelected ? 'text-white' : 'text-slate-300'}`}>
-                    {sc.title}
-                  </div>
-                  <div className="text-[11px] sm:text-xs text-slate-400 line-clamp-2 mt-1 leading-snug">
-                    {sc.shortDesc}
-                  </div>
+                  {getScenarioIcon(sc.icon)}
+                  <span>{sc.title}</span>
                 </button>
-              );
-            })}
+              ))}
+            </div>
           </div>
 
-          {/* Main Lab Canvas */}
-          <div className="rounded-2xl border border-slate-800 bg-obsidian-900/90 shadow-2xl overflow-hidden backdrop-blur-sm mb-12">
+          {/* Main Execution Canvas */}
+          <div className="rounded-2xl border border-slate-800 bg-obsidian-900/90 shadow-2xl overflow-hidden backdrop-blur-sm mb-10">
             
-            {/* Top Control Bar & Scenario Header */}
+            {/* Playback & Controls Header */}
             <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-3.5 border-b border-slate-800 bg-obsidian-850">
               <div className="flex items-center gap-2.5">
                 <span className="flex h-2.5 w-2.5 relative">
@@ -248,11 +308,11 @@ export const AgentLabStandalone: React.FC<AgentLabStandaloneProps> = ({ onNaviga
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500"></span>
                 </span>
                 <span className="font-mono text-xs sm:text-sm font-semibold text-white">
-                  Active Simulation: <span className="text-cyan-400">{currentScenario.title}</span>
+                  Active Workflow: <span className="text-cyan-400">{currentScenario.title}</span>
                 </span>
               </div>
 
-              {/* Playback Controls */}
+              {/* Action Buttons */}
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <button
                   onClick={handlePrev}
@@ -273,12 +333,12 @@ export const AgentLabStandalone: React.FC<AgentLabStandaloneProps> = ({ onNaviga
                   }`}
                 >
                   <Play className={`h-3.5 w-3.5 ${isPlaying ? 'fill-obsidian-950' : ''}`} />
-                  <span>{isPlaying ? 'Pause' : (currentStageIndex === currentScenario.stages.length - 1 ? 'Replay' : 'Run Simulation')}</span>
+                  <span>{isPlaying ? 'Pause' : (isFinished ? 'Replay' : 'Continue')}</span>
                 </button>
 
                 <button
                   onClick={handleNext}
-                  disabled={currentStageIndex === currentScenario.stages.length - 1}
+                  disabled={isFinished}
                   className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg border border-slate-700 bg-obsidian-800 text-slate-300 hover:bg-slate-700 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed text-xs font-mono flex items-center gap-1"
                   title="Next Stage"
                 >
@@ -296,7 +356,7 @@ export const AgentLabStandalone: React.FC<AgentLabStandaloneProps> = ({ onNaviga
               </div>
             </div>
 
-            {/* Progress Bar Indicator */}
+            {/* Progress Bar */}
             <div className="w-full bg-slate-900 h-1 relative">
               <div 
                 className="bg-gradient-to-r from-cyan-500 via-blue-500 to-emerald-500 h-full transition-all duration-300"
@@ -304,9 +364,9 @@ export const AgentLabStandalone: React.FC<AgentLabStandaloneProps> = ({ onNaviga
               />
             </div>
 
-            {/* Interactive Pipeline Step Bar */}
+            {/* 7-Stage Pipeline Step Bar */}
             <div className="p-4 sm:p-6 border-b border-slate-800/80 bg-obsidian-950/60 overflow-x-auto scrollbar-none">
-              <div className="flex items-center justify-between min-w-[660px] gap-2">
+              <div className="flex items-center justify-between min-w-[720px] gap-2">
                 {currentScenario.stages.map((stage, idx) => {
                   const isCurrent = idx === currentStageIndex;
                   const isPassed = idx < currentStageIndex;
@@ -339,7 +399,7 @@ export const AgentLabStandalone: React.FC<AgentLabStandaloneProps> = ({ onNaviga
                         </span>
                       </button>
 
-                      {/* Connecting line */}
+                      {/* Connecting Line */}
                       {idx < currentScenario.stages.length - 1 && (
                         <div className="flex-1 h-0.5 relative mx-1">
                           <div className="h-full bg-slate-800 w-full rounded-full" />
@@ -355,17 +415,17 @@ export const AgentLabStandalone: React.FC<AgentLabStandaloneProps> = ({ onNaviga
               </div>
             </div>
 
-            {/* Split Content: Stage Info + Live Agent Console & Payloads */}
+            {/* Split Content: Stage Info + Console & Payloads */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
               
-              {/* Left Column: Stage Explanation & Result Summary */}
+              {/* Left Column: Stage Detail & Memory/Result Panel */}
               <div className="lg:col-span-5 p-5 sm:p-6 border-b lg:border-b-0 lg:border-r border-slate-800/80 flex flex-col justify-between">
                 <div>
                   
                   {/* Status Badges */}
                   <div className="flex flex-wrap items-center gap-2 mb-3">
                     <span className="px-2.5 py-0.5 rounded text-[11px] font-mono font-bold uppercase bg-cyan-950 text-cyan-400 border border-cyan-500/30">
-                      Stage {currentStageIndex + 1} of 6: {currentStage.badge}
+                      Stage {currentStageIndex + 1} of 7: {currentStage.badge}
                     </span>
                     <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-300 border border-slate-700">
                       STATUS: {currentStage.status}
@@ -384,32 +444,51 @@ export const AgentLabStandalone: React.FC<AgentLabStandaloneProps> = ({ onNaviga
                     {currentStage.detail}
                   </p>
 
-                  {/* Flow Path Blueprint */}
-                  <div className="p-3 rounded-lg bg-obsidian-950 border border-slate-800 mb-6">
-                    <div className="text-[11px] font-mono text-slate-400 mb-1 font-semibold flex items-center gap-1.5">
-                      <Activity className="h-3.5 w-3.5 text-cyan-400" />
-                      <span>SCENARIO FLOW BLUEPRINT</span>
+                  {/* Agent Memory Inspector Box */}
+                  <div className="p-3.5 rounded-xl bg-obsidian-950 border border-slate-800 mb-6">
+                    <div className="text-xs font-mono text-cyan-400 font-bold mb-2 flex items-center gap-1.5">
+                      <Database className="h-3.5 w-3.5" />
+                      <span>AGENT MEMORY STATE</span>
                     </div>
-                    <div className="text-xs font-mono text-cyan-300 leading-snug">
-                      {currentScenario.flowDescription}
+
+                    <div className="space-y-1.5 text-xs font-mono">
+                      <div className="text-slate-300">
+                        <span className="text-slate-500">Working Context: </span>
+                        {currentStage.memorySnapshot?.workingContext || 'Active Task Ingestion'}
+                      </div>
+                      <div className="text-slate-300">
+                        <span className="text-slate-500">Task State: </span>
+                        <span className="text-emerald-400">{currentStage.memorySnapshot?.taskState || currentStage.status}</span>
+                      </div>
+                      <div className="text-slate-300">
+                        <span className="text-slate-500">Previous Step: </span>
+                        {currentStage.memorySnapshot?.previousStep || 'Init'}
+                      </div>
                     </div>
                   </div>
 
                 </div>
 
-                {/* Bottom Result Card & Open Source Link */}
+                {/* Final Result Card when Finished */}
                 <div className="pt-4 border-t border-slate-800/60 mt-4">
-                  {currentStageIndex === currentScenario.stages.length - 1 ? (
-                    <div className="p-3 rounded-lg bg-emerald-950/40 border border-emerald-500/40 mb-3">
-                      <div className="flex items-center gap-2 text-xs font-mono font-bold text-emerald-400 mb-1">
+                  {isFinished && (
+                    <div className="p-4 rounded-xl bg-emerald-950/40 border border-emerald-500/40 mb-4 shadow-lg">
+                      <div className="flex items-center gap-2 text-xs font-mono font-bold text-emerald-400 mb-2">
                         <CheckCircle2 className="h-4 w-4" />
                         <span>RESULT: VERIFIED</span>
                       </div>
-                      <div className="text-xs text-slate-200 font-mono">
-                        {currentScenario.finalResultSummary}
+
+                      <div className="space-y-1 text-xs font-mono text-slate-200">
+                        <div><span className="text-slate-400">Goal: </span>{currentScenario.goalStatement}</div>
+                        <div><span className="text-slate-400">Approach: </span>{currentScenario.approachStatement}</div>
+                        <div><span className="text-slate-400">Tools: </span>{currentScenario.toolsUsedList.join(', ')}</div>
+                        <div><span className="text-slate-400">Verification: </span>{currentScenario.verificationDetails}</div>
+                        <div className="text-emerald-300 font-semibold pt-1">
+                          <span className="text-slate-400">Outcome: </span>{currentScenario.outcomeStatement}
+                        </div>
                       </div>
                     </div>
-                  ) : null}
+                  )}
 
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-xs font-mono text-emerald-400">
@@ -421,7 +500,7 @@ export const AgentLabStandalone: React.FC<AgentLabStandaloneProps> = ({ onNaviga
                       href={currentScenario.associatedProject.repoUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-xs font-mono text-cyan-400 hover:text-cyan-300 hover:underline"
+                      className="inline-flex items-center gap-1.5 text-xs font-mono text-cyan-400 hover:text-cyan-300 hover:underline font-semibold"
                     >
                       <span>{currentScenario.associatedProject.name} ({currentScenario.associatedProject.testCount})</span>
                       <ExternalLink className="h-3.5 w-3.5" />
@@ -445,16 +524,16 @@ export const AgentLabStandalone: React.FC<AgentLabStandaloneProps> = ({ onNaviga
                       </div>
                       <span className="text-xs font-mono text-slate-300 flex items-center gap-1.5 ml-2 font-semibold">
                         <Terminal className="h-3.5 w-3.5 text-cyan-400" />
-                        <span>LIVE AGENT CONSOLE</span>
+                        <span>AGENT CONSOLE</span>
                       </span>
                     </div>
                     <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-cyan-950 text-cyan-400 border border-cyan-500/30">
-                      SIMULATION
+                      [SIMULATION]
                     </span>
                   </div>
 
                   {/* Real-time Event Console Output */}
-                  <div className="h-36 overflow-y-auto rounded-lg bg-obsidian-900 border border-slate-850 p-2.5 font-mono text-xs space-y-1 scrollbar-thin">
+                  <div className="h-36 overflow-y-auto rounded-lg bg-obsidian-900 border border-slate-850 p-2.5 font-mono text-xs space-y-1.5 scrollbar-thin">
                     {cumulativeLogs.map((log, lIdx) => (
                       <div key={lIdx} className="flex items-start gap-2 leading-tight">
                         <span className="text-slate-500 shrink-0">[{log.timestamp}]</span>
@@ -496,6 +575,19 @@ export const AgentLabStandalone: React.FC<AgentLabStandaloneProps> = ({ onNaviga
                   </div>
                 </div>
 
+                {/* Developer Mode Extended Telemetry */}
+                {devMode && (
+                  <div className="p-3 rounded-lg bg-obsidian-900 border border-emerald-500/30 text-xs font-mono space-y-1">
+                    <div className="text-emerald-400 font-bold flex items-center gap-1">
+                      <Sliders className="h-3 w-3" />
+                      <span>DEV MODE TELEMETRY</span>
+                    </div>
+                    <div className="text-slate-400">Agent Status: <span className="text-slate-200">{currentStage.status}</span></div>
+                    <div className="text-slate-400">Active Tool: <span className="text-cyan-300">{currentStage.activeToolId || 'Internal Router'}</span></div>
+                    <div className="text-slate-400">Verification Gate: <span className="text-emerald-400">{currentStage.verificationStatus}</span></div>
+                  </div>
+                )}
+
                 {/* Terminal Footer Info */}
                 <div className="flex items-center justify-between text-[11px] font-mono text-slate-500 pt-2 border-t border-slate-900">
                   <span>Deterministic Execution Core</span>
@@ -508,14 +600,93 @@ export const AgentLabStandalone: React.FC<AgentLabStandaloneProps> = ({ onNaviga
 
           </div>
 
-          {/* Case Studies / Engineering Pillars */}
+          {/* Available Tools Catalog Section */}
+          <div className="mb-14 sm:mb-16">
+            <div className="text-center mb-6">
+              <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center justify-center gap-2">
+                <Wrench className="h-5 w-5 text-cyan-400" />
+                <span>Available Tools</span>
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-400 font-mono mt-1">
+                Deterministic tools callable by DAX Agent during simulation.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              {AVAILABLE_TOOLS.map(tool => (
+                <button
+                  key={tool.id}
+                  onClick={() => setSelectedToolModal(tool)}
+                  className="p-3.5 rounded-xl border border-slate-800 bg-obsidian-900/80 hover:border-cyan-500/50 hover:bg-obsidian-850 transition-all text-left group"
+                >
+                  <div className="text-xs font-mono font-bold text-cyan-400 mb-1 group-hover:text-cyan-300">
+                    {tool.name}
+                  </div>
+                  <div className="text-[10px] font-mono text-slate-500 uppercase tracking-wider mb-2">
+                    {tool.category}
+                  </div>
+                  <div className="text-xs text-slate-400 line-clamp-2 leading-snug">
+                    {tool.description}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Tool Inspection Modal / Card */}
+          {selectedToolModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-obsidian-950/80 backdrop-blur-sm">
+              <div className="w-full max-w-lg rounded-2xl border border-slate-700 bg-obsidian-900 p-6 shadow-2xl space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <div>
+                    <h3 className="text-lg font-bold text-white">{selectedToolModal.name}</h3>
+                    <span className="text-xs font-mono text-cyan-400">{selectedToolModal.category}</span>
+                  </div>
+                  <button
+                    onClick={() => setSelectedToolModal(null)}
+                    className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-mono"
+                  >
+                    Close ✕
+                  </button>
+                </div>
+
+                <div className="space-y-3 text-xs font-mono">
+                  <div>
+                    <div className="text-slate-500 mb-1">Description:</div>
+                    <div className="text-slate-300">{selectedToolModal.description}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-slate-500 mb-1">Simulated Tool Input:</div>
+                    <pre className="p-2.5 rounded-lg bg-obsidian-950 border border-slate-800 text-cyan-300 overflow-x-auto">
+                      {selectedToolModal.simulatedInput}
+                    </pre>
+                  </div>
+
+                  <div>
+                    <div className="text-slate-500 mb-1">Simulated Output:</div>
+                    <pre className="p-2.5 rounded-lg bg-obsidian-950 border border-slate-800 text-emerald-300 overflow-x-auto">
+                      {selectedToolModal.simulatedOutput}
+                    </pre>
+                  </div>
+
+                  <div>
+                    <div className="text-slate-500 mb-1">Verification Check:</div>
+                    <div className="text-emerald-400 font-semibold">{selectedToolModal.verificationCheck}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* How DAX Agent Works (3 Pillars) */}
           <div className="mt-14 sm:mt-16">
             <div className="text-center mb-8">
               <h2 className="text-2xl sm:text-3xl font-bold text-white">
-                DAX Engineering Pillars
+                How DAX Agent Works
               </h2>
               <p className="text-xs sm:text-sm text-slate-400 mt-1 font-mono">
-                Open-source reference implementations backing the lab.
+                Open-source reference implementations powering the architecture.
               </p>
             </div>
 
@@ -610,7 +781,7 @@ export const AgentLabStandalone: React.FC<AgentLabStandaloneProps> = ({ onNaviga
 
       {/* Footer */}
       <footer className="border-t border-slate-800 bg-obsidian-900 py-6 text-center text-xs text-slate-500 font-mono">
-        <div>DAX Agent Lab v2 • 100% Client-Side Deterministic Simulation • All rights reserved 2026</div>
+        <div>DAX Agent • 100% Client-Side Deterministic Simulation • All rights reserved 2026</div>
       </footer>
 
     </div>
