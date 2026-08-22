@@ -3,7 +3,11 @@ import { PROFILE } from '../data/portfolioData';
 import { ArrowDown, ShieldCheck, Cpu, Wrench, Zap } from 'lucide-react';
 import { GithubIcon } from './Icons';
 
-export const Hero: React.FC = () => {
+interface HeroProps {
+  onOpenLab?: () => void;
+}
+
+export const Hero: React.FC<HeroProps> = ({ onOpenLab }) => {
   return (
     <section className="relative overflow-hidden pt-10 pb-14 sm:pt-16 sm:pb-20 md:pt-20 md:pb-24 border-b border-slate-800/60 bg-tech-grid">
       {/* Background Radial Glow */}
@@ -53,13 +57,13 @@ export const Hero: React.FC = () => {
         {/* 3 Prominent Action Buttons */}
         <div className="flex flex-wrap items-center justify-center gap-3 mb-10 sm:mb-12">
           {/* CTA 1: Explore Agent Lab */}
-          <a
-            href="#agent-lab"
+          <button
+            onClick={() => onOpenLab ? onOpenLab() : (window.location.href = '/lab')}
             className="flex items-center gap-2 rounded-lg bg-cyan-500 px-5 py-2.5 text-xs sm:text-sm font-semibold text-obsidian-950 hover:bg-cyan-400 transition-all shadow-lg shadow-cyan-950/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
           >
             <Zap className="h-4 w-4 fill-obsidian-950" />
-            <span>Explore Agent Lab</span>
-          </a>
+            <span>Explore Agent Lab v2</span>
+          </button>
 
           {/* CTA 2: View GitHub */}
           <a

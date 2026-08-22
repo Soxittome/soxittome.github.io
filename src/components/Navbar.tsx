@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import { PROFILE } from '../data/portfolioData';
-import { ExternalLink, Menu, X } from 'lucide-react';
+import { ExternalLink, Menu, X, Zap } from 'lucide-react';
 import { GithubIcon, LinkedinIcon } from './Icons';
 
-export const Navbar: React.FC = () => {
+interface NavbarProps {
+  onNavigateLab?: () => void;
+}
+
+export const Navbar: React.FC<NavbarProps> = ({ onNavigateLab }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
-    { name: 'Agent Lab', href: '#agent-lab' },
     { name: 'Projects', href: '#projects' },
     { name: 'Architecture', href: '#architecture' },
     { name: 'Principles', href: '#principles' },
@@ -40,6 +43,15 @@ export const Navbar: React.FC = () => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6 text-xs font-mono text-slate-300" aria-label="Main Navigation">
+          {/* Direct Agent Lab Link */}
+          <button
+            onClick={() => onNavigateLab ? onNavigateLab() : (window.location.href = '/lab')}
+            className="flex items-center gap-1 text-cyan-400 font-bold hover:text-cyan-300 transition-colors py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 rounded"
+          >
+            <Zap className="h-3.5 w-3.5 fill-cyan-400" />
+            <span>Agent Lab v2</span>
+          </button>
+
           {navLinks.map((link) => (
             <a
               key={link.name}
@@ -92,6 +104,18 @@ export const Navbar: React.FC = () => {
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden border-b border-slate-800 bg-obsidian-900 px-4 py-4 space-y-2">
+          <button
+            onClick={() => {
+              setMobileMenuOpen(false);
+              if (onNavigateLab) onNavigateLab();
+              else window.location.href = '/lab';
+            }}
+            className="w-full text-left py-2 px-3 rounded-md text-sm font-mono text-cyan-400 font-bold bg-cyan-950/40 border border-cyan-500/30 flex items-center gap-2"
+          >
+            <Zap className="h-4 w-4" />
+            <span>Agent Lab v2 (Dedicated /lab)</span>
+          </button>
+
           {navLinks.map((link) => (
             <a
               key={link.name}
